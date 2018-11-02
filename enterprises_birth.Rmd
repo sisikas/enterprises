@@ -170,3 +170,33 @@ print(a)
 
 ```
 
+
+
+ALTERNATIVE (ggplot)
+
+```{r}
+install.packages("ggplot2")
+library("ggplot2")
+
+palette1<-scale_fill_continuous(low="white", high="orange", "New Enterprises")
+
+labels<-labs(list(title="Number of new Enterprises",x="Longitude", y="Latitude"))
+
+#ggplot()+geom_sf(mapping = aes(geometry=geometry, fill=value),data = london_melt)+theme_minimal()+palette1+labels
+
+#ggplot()+geom_sf(mapping = aes(geometry=geometry,fill=value),data = london_melt)+labs(x="", y="", title="New Enterprises in London")+facet_grid(.~variable)+theme(strip.text.x= element_text(size=8, angle=0),strip.background = element_rect(colour="#CCCCFF", fill="#CCCCFF"),axis.ticks = element_blank())
+
+palette1<-scale_fill_continuous(low="white", high="#c51b8a","Number",limits=c(0, 10000),space="Lab")
+
+
+palette2 <- scale_fill_gradient2(low = "#cbff23", mid = "#f8ff8c",
+  high = "#003bae",
+  na.value = "grey50", guide = "colourbar", aesthetics = "fill","New Enterprises in London")
+
+ggplot()+geom_sf(mapping = aes(geometry=geometry,fill=value),data = london_melt)+facet_grid(.~variable)+theme(axis.text.x = element_blank(),axis.text.y = element_blank(),axis.ticks = element_blank(),strip.text.x= element_text(size=8, angle=0),strip.background = element_rect(colour="#CCCCFF", fill="white"))+palette2
+
+
+
+
+```
+
