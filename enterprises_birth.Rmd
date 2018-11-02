@@ -1,0 +1,172 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+ 
+
+```{r}
+install.packages("tidyverse",repos = 'https://CRAN.R-project.org/package=tidyverse')
+install.packages("maptools")
+install.packages(c("OpenStreetMap", "tmap"))
+install.packages("classInt")
+install.packages("readr")
+
+install.packages("munsell")
+
+
+library(tmaptools)
+library(RColorBrewer)
+library(OpenStreetMap)
+library(sp)
+library(classInt)
+
+library(rgeos)
+library(tmap)
+library(tmaptools)
+library(sf)
+library(rgdal)
+library(geojsonio)
+library(readr)
+library(tidyverse)
+
+
+```
+
+katevazw shp file apo web.
+
+```{r}
+eng_bound <- read_shape("C:/Users/User/Desktop/work/casa/0005 GIS/1. week 4 assignment/London map/eng_bound.shp", as.sf = TRUE)
+
+qtm(eng_bound)
+
+```
+
+thelw na kratisw mono ta boroughs tou londinou. tsekarw an diavase kala to eng.bound. (to xarti olo tis agglias) metonomazw ta columns gia evkolia. ftiaxnw londonmap, pou krataei mono ta rows sta opoia to column code ksekinaei me e09
+
+```{r}
+
+datatypelist <- data.frame(cbind(lapply(eng_bound,class)))
+
+names(eng_bound)[1] <- ("code")
+names(eng_bound)[2] <- ("name")
+
+LondonMap <-eng_bound[grep("^E09",eng_bound$code),]
+qtm(LondonMap)
+
+
+```
+
+
+PART 2
+etoimazw map me enterprises in London!!
+anoigw, diavazw, metonomazw k krataw mono ta rows poy thelw(diladi avta gia ta boroughs)
+
+
+```{r}
+
+business_original<- read.csv("C://Users/User/Desktop/work/casa/0005 GIS/1. week 4 assignment/startups/edited_birth_enterprises.csv", header = TRUE, sep = ",")
+
+#tsekarw an to diavase kala
+datatypelist_enterpr <- data.frame(cbind(lapply(business_original,class)))
+
+names(business_original)[1] <- c("code1")
+
+London_data <- business_original[grep("^E09",business_original$code1),]
+
+
+
+```
+
+
+PART 3
+kanw join to london_data kai london_map me vasi to koino column !!
+
+
+```{r}
+class(London_data)
+
+class(LondonMap)
+
+enterprises_map <- append_data(LondonMap,London_data,key.shp="code",key.data="code1",ignore.duplicates = TRUE)
+
+class(enterprises_map)
+
+tmap_mode("plot")
+
+qtm(enterprises_map,fill="Mean")
+```
+
+PART 4 MAPPING POLLA MAPS
+
+```{r}
+map1 <-  tm_shape(enterprises_map) + tm_borders(lty = 2)
+print(map1)
+
+
+
+
+```
+
+```{r}
+map2 <- tm_shape(enterprises_map)+tm_fill()
+print(map2)
+
+
+
+```
+
+
+```{r}
+
+tmap_arrange(map1, map2)
+
+```
+
+
+```{r}
+
+title1 = expression("New enterprises")
+
+map3 = tm_shape(enterprises_map) + tm_polygons(col = "X2004", n = 10, title=title1,style = "jenks",palette = "YlGnBu")+tm_compass(type = "arrow", position = c("left", "bottom"))+tm_scale_bar(position = c("left", "bottom"),size=0.5)+tm_layout(inner.margin=0.1)+tm_layout(saturation=0.4)
+
+print(map3)
+
+
+
+```
+
+
+```{r}
+
+library(reshape2)
+library(dplyr)
+london_melt <- melt(business_original,id.vars = 1:2, measure.vars = c(3,7,11,15))
+
+london_melt <- left_join(london_melt,LondonMap,by = c("code1" = "code"))
+
+london_melt <- london_melt[,c(1:4,10)]
+
+library(tmap)
+library(sf)
+
+london_melt <- london_melt[grep("^E09",london_melt$code1),]
+london_melt <- st_as_sf(london_melt)
+
+#tmap_mode("plot")
+
+#qtm(london_melt, fill = "value", by = "variable")
+
+#timeline=tm_shape(london_melt) +tm_facets(by = "variable", nrow = 3, free.coords = FALSE)+ tm_polygons("value", palette="Blues",n=10)+tm_fill("value")
+
+a=tm_shape(london_melt) +
+    tm_polygons("value", palette = "-magma",n=8) +
+    tm_facets(by = "variable")+tm_layout(panel.labels = c('2004','2008','2012','2016'), panel.label.color = 'white',panel.label.size = 1,panel.label.bg.color = '#79839c',legend.show = TRUE, legend.text.size = 0.5,title="My Title", title.size=1)+tm_compass(type="arrow",size=1.5,fontsize = 0.8)
+
+print(a)
+
+
+
+
+```
+
