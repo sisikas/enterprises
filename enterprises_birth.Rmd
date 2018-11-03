@@ -215,25 +215,30 @@ library(ggplot2)
 library(ggsn)
 
 
-palette2 <- scale_fill_gradient(low ="#2c7fb8",high = "#f60c0c",na.value = "grey50", guide = "colourbar", aesthetics = "fill","New Enterprises")
+palette2 <- scale_fill_gradient(low ="#fbf87d",high = "#0056fd",na.value = "grey50", guide = "colourbar", aesthetics = "fill","Number of new \nenterprise registrations")
 
 
-theme1 <- theme(strip.text.x= element_text(size=9, angle=0,colour="#b64848"),strip.background = element_rect(colour="#b64848", fill="white"),legend.background = element_rect(fill="white",size=0.7, linetype="solid",colour ="darkblue"),legend.position="right",legend.box.margin=margin(c(70,70,70,30)),panel.background = element_rect(fill = '#f2f2f2', colour = '#f2f2f2'),panel.grid.major = element_line(colour = "#b4b4b4"),axis.text.x = element_text(size=7,colour="#b64848"),axis.text.y = element_text(size=7,colour="#b64848"))
+theme1 <- theme(strip.text.x= element_text(size=9, angle=0,colour="#b64848"),strip.background = element_rect(colour="#006259", fill="white"),legend.background = element_rect(fill="white",size=0.7, linetype="solid",colour ="#2f446f"),legend.position=c("right"),legend.box.margin=margin(c(70,70,70,30)),panel.background = element_rect(fill = '#f2f2f2', colour = '#f2f2f2'),panel.grid.major = element_line(colour = "#b4b4b4"),axis.text.x = element_text(size=9,colour="#b64848"),axis.text.y = element_text(size=9,colour="#b64848"),title =element_text(size=14),panel.spacing = unit(1, "lines"))
 
-
-#ggplot()+geom_sf(mapping = aes(geometry=geometry,fill=value),data = london_melt)+facet_wrap(~ variable, ncol = 2)+theme1+palette2+labs1
 
 
 labels <- c(X2004 = "2004", X2008 = "2008",X2012="2012",X2016="2016")
-ggplot()+geom_sf(mapping = aes(geometry=geometry,fill=value),data = london_melt)+facet_wrap(~ variable, ncol = 2,labeller=labeller(variable = labels))+theme1+ggtitle("Number of new enterprises in London, by Borough")+palette2
 
-north2(london_melt, x = 0.85, y = 0.2, scale = 0.1, symbol = 1)
+a <- ggplot()+geom_sf(mapping = aes(geometry=geometry,fill=value),data = london_melt)+facet_wrap(~ variable, ncol = 2,labeller=labeller(variable = labels))+theme1+ggtitle("New enterprises in London, by Borough")+palette2+labs(caption = "Source: Office for National Statistics")
+  
 
-
-
+#an to kanw etsi meta den dexetai to North
+#g <- grid.arrange(a,bottom = textGrob("Data sources:", x = 1,hjust = 1, gp = gpar(fontface = 3L, fontsize = 9)))
+print(a)
+pdf(file="mapping_enterprises.pdf",width=10.5,height=8)
+north2(a, x = 0.80, y = 0.3, scale = 0.1, symbol = 1)
 
 
 ```
 
-#an thelw na min exei to grid
-#theme2 <- theme(axis.text.x = element_blank(),axis.text.y = element_blank(),axis.ticks = element_blank(),strip.text.x= element_text(size=8, angle=0),strip.background = element_rect(colour="#CCCCFF", fill="white"),legend.background = element_rect(fill="white",size=0.5, linetype="solid",colour ="darkblue"),legend.position="right",legend.box.margin=margin(c(50,50,50,50)))
+an thelw na min exei to grid
+theme2 <- theme(axis.text.x = element_blank(),axis.text.y = element_blank(),axis.ticks = element_blank(),strip.text.x= element_text(size=8, angle=0),strip.background = element_rect(colour="#CCCCFF", fill="white"),legend.background = element_rect(fill="white",size=0.5, linetype="solid",colour ="darkblue"),legend.position="right",legend.box.margin=margin(c(50,50,50,50)))
+
+
+GIA CAPTION+2 FOOTNOTES
+g <- grid.arrange(a + labs(caption="Source: "),bottom = textGrob("grid caption", x = 1,hjust = 1, gp = gpar(fontface = 3L, fontsize = 9)))
