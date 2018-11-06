@@ -3,8 +3,7 @@ title: "R Notebook"
 output: html_notebook
 ---
 
- 
-
+Installing packages that will be useful for our mapping process:
 ```{r}
 install.packages("tidyverse",repos = 'https://CRAN.R-project.org/package=tidyverse')
 install.packages("maptools")
@@ -17,57 +16,45 @@ install.packages("munsell")
 
 library(tmaptools)
 library(RColorBrewer)
-library(OpenStreetMap)
 library(sp)
 library(classInt)
-
 library(rgeos)
 library(tmap)
 library(tmaptools)
 library(sf)
 library(rgdal)
-library(geojsonio)
 library(readr)
 library(tidyverse)
 
 
 ```
 
-katevazw shp file apo web.
+
+
+PART 1 / London boroughs boundaries
+
+Reading shp file of London Boundaries. Renames the column with the area codes into "code"
 
 ```{r}
 eng_bound <- read_shape("C:/Users/User/Desktop/work/casa/0005 GIS/1. week 4 assignment/London map/eng_bound.shp", as.sf = TRUE)
+
+names(eng_bound)[1]<-"code"
 
 qtm(eng_bound)
 
 ```
 
-thelw na kratisw mono ta boroughs tou londinou. tsekarw an diavase kala to eng.bound. (to xarti olo tis agglias) metonomazw ta columns gia evkolia. ftiaxnw londonmap, pou krataei mono ta rows sta opoia to column code ksekinaei me e09
-
-```{r}
-
-datatypelist <- data.frame(cbind(lapply(eng_bound,class)))
-
-names(eng_bound)[1] <- ("code")
-names(eng_bound)[2] <- ("name")
-
-LondonMap <-eng_bound[grep("^E09",eng_bound$code),]
-qtm(LondonMap)
 
 
-```
+PART 2 / Enterprise births data
 
-
-PART 2
-etoimazw map me enterprises in London!!
-anoigw, diavazw, metonomazw k krataw mono ta rows poy thelw(diladi avta gia ta boroughs)
+Reads csv with the enterprises births data and cleans characters from numeric values. Checks if the data is read correctly. Renames column with area code. From the dataframe keeps only the rows that include the London Borough Codes (starting with E09)
 
 
 ```{r}
 
-business_original<- read.csv("C://Users/User/Desktop/work/casa/0005 GIS/1. week 4 assignment/startups/edited_birth_enterprises.csv", header = TRUE, sep = ",")
+business_original<- read_csv("C://Users/User/Desktop/work/casa/0005 GIS/1. week 4 assignment/startups/edited_birth_enterprises.csv", na = "n/a")
 
-#tsekarw an to diavase kala
 datatypelist_enterpr <- data.frame(cbind(lapply(business_original,class)))
 
 names(business_original)[1] <- c("code1")
@@ -75,67 +62,37 @@ names(business_original)[1] <- c("code1")
 London_data <- business_original[grep("^E09",business_original$code1),]
 
 
-
 ```
 
 
 PART 3
-kanw join to london_data kai london_map me vasi to koino column !!
+
+Joins map of London and enterprise data according to their common area code field. Plots a sample map with the mean of enterprises registered throughout the years.
 
 
 ```{r}
 class(London_data)
 
-class(LondonMap)
-
-enterprises_map <- append_data(LondonMap,London_data,key.shp="code",key.data="code1",ignore.duplicates = TRUE)
+enterprises_map <- append_data(eng_bound,London_data,key.shp="code",key.data="code1",ignore.duplicates = TRUE)
 
 class(enterprises_map)
 
-tmap_mode("plot")
-
-qtm(enterprises_map,fill="Mean")
 ```
 
-PART 4 MAPPING POLLA MAPS
+
+PART 4 
+
+Starting plotting the maps. Creating a sample map of London boroughs, trying different linetypes.
 
 ```{r}
 map1 <-  tm_shape(enterprises_map) + tm_borders(lty = 2)
 print(map1)
 
-
-
-
-```
-
-```{r}
-map2 <- tm_shape(enterprises_map)+tm_fill()
-print(map2)
-
-
-
 ```
 
 
-```{r}
 
-tmap_arrange(map1, map2)
-
-```
-
-
-```{r}
-
-title1 = expression("New enterprises")
-
-map3 = tm_shape(enterprises_map) + tm_polygons(col = "X2004", n = 10, title=title1,style = "jenks",palette = "YlGnBu")+tm_compass(type = "arrow", position = c("left", "bottom"))+tm_scale_bar(position = c("left", "bottom"),size=0.5)+tm_layout(inner.margin=0.1)+tm_layout(saturation=0.4)
-
-print(map3)
-
-
-
-```
-
+Rearranges the dataframe of business_original so that every column (of years between 2004-2016) consists a single one, compiled above the previous one. From the final dataframe, it keeps the geometry field and only the rows which contain London Borough codes
 
 ```{r}
 
@@ -143,102 +100,69 @@ library(reshape2)
 library(dplyr)
 london_melt <- melt(business_original,id.vars = 1:2, measure.vars = c(3,7,11,15))
 
-london_melt <- left_join(london_melt,LondonMap,by = c("code1" = "code"))
+
+
+london_melt <- left_join(london_melt,eng_bound,by = c("code1" = "code"))
 
 london_melt <- london_melt[,c(1:4,10)]
 
-library(tmap)
+
 library(sf)
 
 london_melt <- london_melt[grep("^E09",london_melt$code1),]
 london_melt <- st_as_sf(london_melt)
 
-#tmap_mode("plot")
 
-#qtm(london_melt, fill = "value", by = "variable")
 
-#timeline=tm_shape(london_melt) +tm_facets(by = "variable", nrow = 3, free.coords = FALSE)+ tm_polygons("value", palette="Blues",n=10)+tm_fill("value")
 
-a=tm_shape(london_melt) +
+```
+
+
+Trying a sample faceted map with tmap 
+
+```{r}
+library(tmap)
+sample_map=tm_shape(london_melt) +
     tm_polygons("value", palette = "-magma",n=8) +
     tm_facets(by = "variable")+tm_layout(panel.labels = c('2004','2008','2012','2016'), panel.label.color = 'white',panel.label.size = 1,panel.label.bg.color = '#79839c',legend.show = TRUE, legend.text.size = 0.5,title="My Title", title.size=1)+tm_compass(type="arrow",size=1.5,fontsize = 0.8)
 
-print(a)
-
-
-
-
+print(sample_map)
 ```
 
 
+PART 5
 
-ALTERNATIVE (ggplot)
+Creating the final faceted plot using ggplot package
 
 ```{r}
+
 install.packages("ggplot2")
 library("ggplot2")
-
-palette1<-scale_fill_continuous(low="white", high="orange", "New Enterprises")
-
-labels<-labs(list(title="Number of new Enterprises",x="Longitude", y="Latitude"))
-
-#ggplot()+geom_sf(mapping = aes(geometry=geometry, fill=value),data = london_melt)+theme_minimal()+palette1+labels
-
-#ggplot()+geom_sf(mapping = aes(geometry=geometry,fill=value),data = london_melt)+labs(x="", y="", title="New Enterprises in London")+facet_grid(.~variable)+theme(strip.text.x= element_text(size=8, angle=0),strip.background = element_rect(colour="#CCCCFF", fill="#CCCCFF"),axis.ticks = element_blank())
-
-palette1<-scale_fill_continuous(low="white", high="#c51b8a","Number",limits=c(0, 10000),space="Lab")
-
-
-palette2 <- scale_fill_gradient2(low = "#cbff23", mid = "#f8ff8c",
-  high = "#003bae",
-  na.value = "grey50", guide = "colourbar", aesthetics = "fill","New Enterprises in London")
-
-ggplot()+geom_sf(mapping = aes(geometry=geometry,fill=value),data = london_melt)+facet_grid(.~variable)+theme(axis.text.x = element_blank(),axis.text.y = element_blank(),axis.ticks = element_blank(),strip.text.x= element_text(size=8, angle=0),strip.background = element_rect(colour="#CCCCFF", fill="white"))+palette2
-
-
-
-
-```
-
-
-
-
-
-```{r}
-
-
 install.packages("gridExtra")
 library(gridExtra)
 library(grid)
 library(ggplot2)
 
 library(ggsn)
-
-
-palette2 <- scale_fill_gradient(low ="#fbf87d",high = "#0056fd",na.value = "grey50", guide = "colourbar", aesthetics = "fill","Number of new \nenterprise registrations")
-
-
-theme1 <- theme(strip.text.x= element_text(size=9, angle=0,colour="#b64848"),strip.background = element_rect(colour="#006259", fill="white"),legend.background = element_rect(fill="white",size=0.7, linetype="solid",colour ="#2f446f"),legend.position=c("right"),legend.box.margin=margin(c(70,70,70,30)),panel.background = element_rect(fill = '#f2f2f2', colour = '#f2f2f2'),panel.grid.major = element_line(colour = "#b4b4b4"),axis.text.x = element_text(size=9,colour="#b64848"),axis.text.y = element_text(size=9,colour="#b64848"),title =element_text(size=14),panel.spacing = unit(1, "lines"))
+install.packages("viridis")
+library(viridis)
 
 
 
-labels <- c(X2004 = "2004", X2008 = "2008",X2012="2012",X2016="2016")
+theme1 <- theme(strip.text.x= element_text(size=11, angle=0,colour="#262321"),strip.background = element_rect(colour="#c3c3c2", fill="#7383a5"),legend.background = element_rect(fill="white",size=0.7, linetype="solid",colour ="#2f446f"),legend.position=c("right"),legend.box.margin=margin(c(70,70,70,30)),panel.background = element_rect(fill = '#e7e6f8', colour = '#f2f2f2'),panel.grid.major = element_line(colour = "#ead595"),axis.text.x = element_text(size=9,colour="#d8680f"),axis.text.y = element_text(size=9,colour="#d8680f"),title =element_text(size=14),panel.spacing = unit(1, "lines"))
 
-a <- ggplot()+geom_sf(mapping = aes(geometry=geometry,fill=value),data = london_melt)+facet_wrap(~ variable, ncol = 2,labeller=labeller(variable = labels))+theme1+ggtitle("New enterprises in London, by Borough")+palette2+labs(caption = "Source: Office for National Statistics")
-  
+labels <- c("2004" = "2004", "2008" = "2008","2012" = "2012","2016" = "2016")
 
-#an to kanw etsi meta den dexetai to North
-#g <- grid.arrange(a,bottom = textGrob("Data sources:", x = 1,hjust = 1, gp = gpar(fontface = 3L, fontsize = 9)))
+
+a <- ggplot()+geom_sf(mapping = aes(geometry=geometry,fill=value),data = london_melt)+facet_wrap(~ variable, ncol = 2,labeller=labeller(variable = labels))+theme1+ggtitle("New enterprises in London, by Borough")+labs(caption = "Source: Office for National Statistics")+scale_fill_viridis(option = "A",direction=-1)+ labs(fill = "Number of enterprise births")
+
+north2(a, x = 0.76, y = 0.3, scale = 0.1, symbol = 1)
 print(a)
-pdf(file="mapping_enterprises.pdf",width=10.5,height=8)
-north2(a, x = 0.80, y = 0.3, scale = 0.1, symbol = 1)
+pdf(file="enterpriseBirths.pdf",width=10.5,height=8)
 
 
 ```
 
-an thelw na min exei to grid
-theme2 <- theme(axis.text.x = element_blank(),axis.text.y = element_blank(),axis.ticks = element_blank(),strip.text.x= element_text(size=8, angle=0),strip.background = element_rect(colour="#CCCCFF", fill="white"),legend.background = element_rect(fill="white",size=0.5, linetype="solid",colour ="darkblue"),legend.position="right",legend.box.margin=margin(c(50,50,50,50)))
 
 
-GIA CAPTION+2 FOOTNOTES
-g <- grid.arrange(a + labs(caption="Source: "),bottom = textGrob("grid caption", x = 1,hjust = 1, gp = gpar(fontface = 3L, fontsize = 9)))
+
